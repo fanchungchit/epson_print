@@ -78,6 +78,7 @@ class EpsonPrintPlugin: FlutterPlugin, MethodCallHandler {
         Printer.PARAM_DEFAULT.toDouble(), Printer.COMPRESS_AUTO)
       printer.addCut(Printer.CUT_FEED)
     }
+    printer.sendData(Printer.PARAM_DEFAULT)
     printer.endTransaction()
     printer.disconnect()
     result.success(null)
