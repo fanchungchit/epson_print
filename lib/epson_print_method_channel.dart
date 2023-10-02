@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'epson_print_platform_interface.dart';
+import 'epson_printer.dart';
 
 /// An implementation of [EpsonPrintPlatform] that uses method channels.
 class MethodChannelEpsonPrint extends EpsonPrintPlatform {
@@ -10,8 +11,24 @@ class MethodChannelEpsonPrint extends EpsonPrintPlatform {
   final methodChannel = const MethodChannel('epson_print');
 
   @override
-  Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
-    return version;
+  Future<List<EpsonPrinter>> discovery() async {
+    final List<dynamic> printers =
+        await methodChannel.invokeMethod('discovery');
+    return printers
+        .map((e) => EpsonPrinter.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  @override
+  Future<void> printImage({
+    required EpsonPrinter printer,
+    required List<int> image,
+    int copies = 1,
+  }) {
+    return methodChannel.invokeMethod('printImage', {
+      'target': printer.target,
+      'image': image,
+      'copies': copies,
+    });
   }
 }

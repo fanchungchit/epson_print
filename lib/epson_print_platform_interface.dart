@@ -1,6 +1,7 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'epson_print_method_channel.dart';
+import 'epson_printer.dart';
 
 abstract class EpsonPrintPlatform extends PlatformInterface {
   /// Constructs a EpsonPrintPlatform.
@@ -23,7 +24,15 @@ abstract class EpsonPrintPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String?> getPlatformVersion() {
-    throw UnimplementedError('platformVersion() has not been implemented.');
+  Future<List<EpsonPrinter>> discovery() {
+    throw UnimplementedError('discovery() has not been implemented.');
+  }
+
+  Future<void> printImage({
+    required EpsonPrinter printer,
+    required List<int> image,
+    int copies = 1,
+  }) {
+    throw UnimplementedError('printImage() has not been implemented.');
   }
 }
