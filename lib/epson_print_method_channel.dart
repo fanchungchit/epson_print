@@ -20,15 +20,16 @@ class MethodChannelEpsonPrint extends EpsonPrintPlatform {
   }
 
   @override
-  Future<void> printImage({
+  Future<bool> printImage({
     required EpsonPrinter printer,
     required List<int> image,
     int copies = 1,
-  }) {
-    return methodChannel.invokeMethod('printImage', {
+  }) async {
+    final result = await methodChannel.invokeMethod('printImage', {
       'target': printer.target,
       'image': image,
       'copies': copies,
     });
+    return result as bool? ?? false;
   }
 }

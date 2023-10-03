@@ -2,6 +2,8 @@ package com.ellie_erp.epson_print
 
 import android.content.Context
 import android.graphics.BitmapFactory
+import android.util.Log
+import com.epson.epos2.Epos2Exception
 import com.epson.epos2.discovery.Discovery
 import com.epson.epos2.discovery.DiscoveryListener
 import com.epson.epos2.discovery.FilterOption
@@ -20,6 +22,7 @@ class EpsonPrintPlugin: FlutterPlugin, MethodCallHandler {
   /// when the Flutter Engine is detached from the Activity
   private lateinit var channel : MethodChannel
   private lateinit var context: Context
+  private var printer: Printer? = null
 
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "epson_print")
@@ -63,24 +66,91 @@ class EpsonPrintPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   private fun printImage(call: MethodCall, result: Result) {
-    val target = call.argument<String>("target")
+    val target = call.argument<String>("target")!!
     val copies = call.argument<Int>("copies")!!
     val image = call.argument<ByteArray>("image")!!
-    val imageBitmap = BitmapFactory.decodeByteArray(image, 0, image.size)
 
-    val printer = Printer(Printer.TM_T82, Printer.LANG_ZH_TW, context)
-    printer.connect(target, Printer.PARAM_DEFAULT)
-    printer.beginTransaction()
-    printer.sendData(Printer.PARAM_DEFAULT)
-    printer.addTextAlign(Printer.ALIGN_CENTER)
-    for (i in 1..copies) {
-      printer.addImage(imageBitmap, 0, 0, imageBitmap.width, imageBitmap.height, Printer.COLOR_1, Printer.MODE_MONO, Printer.HALFTONE_DITHER,
-        Printer.PARAM_DEFAULT.toDouble(), Printer.COMPRESS_AUTO)
-      printer.addCut(Printer.CUT_FEED)
+    if (!connect(target)) {
+      result.error("connect", "Failed to connect to printer", null)
+      if (printer != null) {
+        printer!!.clearCommandBuffer()
+      }
+      return
     }
-    printer.sendData(Printer.PARAM_DEFAULT)
-    printer.endTransaction()
-    printer.disconnect()
-    result.success(null)
+
+    if (!createData(image, copies)) {
+      result.error("createData", "Failed to create data", null)
+      if (printer != null) {
+        printer!!.clearCommandBuffer()
+      }
+      return
+    }
+
+    try {
+      val status = printer!!.status
+      Log.d("EpsonPrintPlugin", "Printer connection: ${status.connection} online: ${status.online} coverOpen: ${status.coverOpen} paper: ${status.paper} paperFeed: ${status.paperFeed} panelSwitch: ${status.panelSwitch}")
+      printer!!.sendData(Printer.PARAM_DEFAULT)
+      result.success(true)
+    } catch (e: Epos2Exception) {
+      e.printStackTrace()
+      Log.e("EpsonPrintPlugin", "Failed to print: $e")
+      disconnect()
+    }
+  }
+
+  private fun connect(target: String): Boolean {
+    if (printer == null) {
+      printer = Printer(Printer.TM_M30, Printer.MODEL_ANK, context)
+    }
+    try {
+      val status = printer!!.status
+      if (status.online != Printer.TRUE) {
+        printer!!.connect(target, Printer.PARAM_DEFAULT)
+      }
+      printer!!.clearCommandBuffer()
+    } catch (e: Epos2Exception) {
+      disconnect()
+      Log.d("EpsonPrintPlugin", "Failed to connect: $e")
+      return false
+    }
+    return true
+  }
+
+  private fun disconnect() {
+    if (printer == null) {
+      return
+    }
+    while (true) {
+      try {
+        printer!!.disconnect()
+        printer = null
+        break
+      } catch (e: Exception) {
+        Log.d("EpsonPrintPlugin", "Failed to disconnect: $e")
+        printer!!.clearCommandBuffer()
+        throw e
+      }
+    }
+    if (printer != null) {
+      printer!!.clearCommandBuffer()
+    }
+  }
+
+  private fun createData(image: ByteArray, copies: Int): Boolean {
+    if (printer == null) {
+      return false
+    }
+    try {
+      val imageData = BitmapFactory.decodeByteArray(image, 0, image.size)
+      for (i in 0 until copies) {
+        printer!!.addImage(imageData, 0, 0, imageData.width, imageData.height, Printer.COLOR_1, Printer.MODE_MONO, Printer.HALFTONE_DITHER,
+          Printer.PARAM_DEFAULT.toDouble(), Printer.COMPRESS_AUTO)
+        printer!!.addCut(copies)
+      }
+    } catch (e: Exception) {
+      Log.d("EpsonPrintPlugin", "Failed to create data: $e")
+      return false
+    }
+    return true
   }
 }

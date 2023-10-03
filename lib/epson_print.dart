@@ -8,7 +8,7 @@ class EpsonPrint {
     return EpsonPrintPlatform.instance.discovery();
   }
 
-  Future<void> printImage({
+  Future<bool> printImage({
     required EpsonPrinter printer,
     required List<int> image,
     int copies = 1,
