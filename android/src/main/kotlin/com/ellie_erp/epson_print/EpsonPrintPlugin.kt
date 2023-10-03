@@ -71,6 +71,7 @@ class EpsonPrintPlugin: FlutterPlugin, MethodCallHandler {
     val image = call.argument<ByteArray>("image")!!
 
     if (!connect(target)) {
+      Log.d("EpsonPrintPlugin", "Failed to connect to printer")
       result.error("connect", "Failed to connect to printer", null)
       if (printer != null) {
         printer!!.clearCommandBuffer()
@@ -79,6 +80,7 @@ class EpsonPrintPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     if (!createData(image, copies)) {
+      Log.d("EpsonPrintPlugin", "Failed to create data")
       result.error("createData", "Failed to create data", null)
       if (printer != null) {
         printer!!.clearCommandBuffer()
@@ -87,6 +89,7 @@ class EpsonPrintPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     try {
+      Log.d("EpsonPrintPlugin", "Printer status: ${printer!!.status}")
       val status = printer!!.status
       Log.d("EpsonPrintPlugin", "Printer connection: ${status.connection} online: ${status.online} coverOpen: ${status.coverOpen} paper: ${status.paper} paperFeed: ${status.paperFeed} panelSwitch: ${status.panelSwitch}")
       printer!!.sendData(Printer.PARAM_DEFAULT)
@@ -100,7 +103,7 @@ class EpsonPrintPlugin: FlutterPlugin, MethodCallHandler {
 
   private fun connect(target: String): Boolean {
     if (printer == null) {
-      printer = Printer(Printer.TM_M30, Printer.MODEL_ANK, context)
+      printer = Printer(Printer.TM_T82, Printer.MODEL_ANK, context)
     }
     try {
       val status = printer!!.status
@@ -125,8 +128,8 @@ class EpsonPrintPlugin: FlutterPlugin, MethodCallHandler {
         printer!!.disconnect()
         printer = null
         break
-      } catch (e: Exception) {
-        Log.d("EpsonPrintPlugin", "Failed to disconnect: $e")
+      } catch (e: Epos2Exception) {
+        Log.d("EpsonPrintPlugin", "Failed to disconnect: ${e.errorStatus}")
         printer!!.clearCommandBuffer()
         throw e
       }
