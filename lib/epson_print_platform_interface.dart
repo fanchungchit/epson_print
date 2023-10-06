@@ -32,6 +32,7 @@ abstract class EpsonPrintPlatform extends PlatformInterface {
     required EpsonPrinter printer,
     required List<int> image,
     int copies = 1,
+    bool withDrawer = false,
   }) {
     throw UnimplementedError('printImage() has not been implemented.');
   }

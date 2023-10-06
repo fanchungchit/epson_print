@@ -68,6 +68,7 @@ class EpsonPrintPlugin: FlutterPlugin, MethodCallHandler {
   private fun printImage(call: MethodCall, result: Result) {
     val target = call.argument<String>("target")!!
     val copies = call.argument<Int>("copies")!!
+    val withDrawer = call.argument<Boolean>("withDrawer")!!
     val image = call.argument<ByteArray>("image")!!
 
     if (!connect(target)) {
@@ -79,7 +80,7 @@ class EpsonPrintPlugin: FlutterPlugin, MethodCallHandler {
       return
     }
 
-    if (!createData(image, copies)) {
+    if (!createData(image, copies, withDrawer)) {
       Log.d("EpsonPrintPlugin", "Failed to create data")
       result.error("createData", "Failed to create data", null)
       if (printer != null) {
@@ -131,24 +132,25 @@ class EpsonPrintPlugin: FlutterPlugin, MethodCallHandler {
       } catch (e: Epos2Exception) {
         Log.d("EpsonPrintPlugin", "Failed to disconnect: ${e.errorStatus}")
         printer!!.clearCommandBuffer()
-        throw e
+//        throw e
       }
-    }
-    if (printer != null) {
-      printer!!.clearCommandBuffer()
     }
   }
 
-  private fun createData(image: ByteArray, copies: Int): Boolean {
+  private fun createData(image: ByteArray, copies: Int, withDrawer: Boolean): Boolean {
     if (printer == null) {
       return false
     }
     try {
+      if (withDrawer) {
+        printer!!.addPulse(Printer.PARAM_DEFAULT, Printer.PARAM_DEFAULT)
+      }
+
       val imageData = BitmapFactory.decodeByteArray(image, 0, image.size)
       for (i in 0 until copies) {
         printer!!.addImage(imageData, 0, 0, imageData.width, imageData.height, Printer.COLOR_1, Printer.MODE_MONO, Printer.HALFTONE_DITHER,
           Printer.PARAM_DEFAULT.toDouble(), Printer.COMPRESS_AUTO)
-        printer!!.addCut(copies)
+        printer!!.addCut(Printer.CUT_FEED)
       }
     } catch (e: Exception) {
       Log.d("EpsonPrintPlugin", "Failed to create data: $e")

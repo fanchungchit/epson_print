@@ -12,11 +12,13 @@ class EpsonPrint {
     required EpsonPrinter printer,
     required List<int> image,
     int copies = 1,
+    bool withDrawer = false,
   }) {
     return EpsonPrintPlatform.instance.printImage(
       printer: printer,
       image: image,
       copies: copies,
+      withDrawer: withDrawer,
     );
   }
 }

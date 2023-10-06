@@ -24,11 +24,13 @@ class MethodChannelEpsonPrint extends EpsonPrintPlatform {
     required EpsonPrinter printer,
     required List<int> image,
     int copies = 1,
+    bool withDrawer = false,
   }) async {
     final result = await methodChannel.invokeMethod('printImage', {
       'target': printer.target,
       'image': image,
       'copies': copies,
+      'withDrawer': withDrawer,
     });
     return result as bool? ?? false;
   }
