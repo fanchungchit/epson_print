@@ -49,16 +49,11 @@ class _HomeViewState extends State<HomeView> {
                 title: Text(printer.name),
                 subtitle: Text(printer.ipAddress),
                 onTap: () async {
-                  try {
-                    final pdf = await buildPdf();
-                    final raster = Printing.raster(pdf);
-                    final image = await (await raster.first).toPng();
-                    final result = await epsonPrint.printImage(
-                        printer: printer, image: image, withDrawer: true);
-                    print('Printed: $result');
-                  } catch (e) {
-                    print(e);
-                  }
+                  final pdf = await buildPdf();
+                  final raster = Printing.raster(pdf);
+                  final image = await (await raster.first).toPng();
+                  await epsonPrint.printImage(
+                      printer: printer, image: image, withDrawer: true);
                 },
               );
             },

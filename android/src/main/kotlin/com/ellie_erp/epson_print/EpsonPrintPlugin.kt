@@ -43,26 +43,36 @@ class EpsonPrintPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   private fun discovery(result: Result) {
-    val filterOption = FilterOption()
+    try {
+      val filterOption = FilterOption()
 
-     val discoveryListener = DiscoveryListener { deviceInfo ->
-       val printers = mutableListOf<Map<String, Any>>()
+      val discoveryListener = DiscoveryListener { deviceInfo ->
+        val printers = mutableListOf<Map<String, Any>>()
 
-         val printer = mapOf(
-            "target" to deviceInfo.target,
-            "deviceName" to deviceInfo.deviceName,
-            "deviceType" to deviceInfo.deviceType,
-            "ipAddress" to deviceInfo.ipAddress,
-            "macAddress" to deviceInfo.macAddress,
-            "bdAddress" to deviceInfo.bdAddress,
-         )
+        val printer = mapOf(
+          "target" to deviceInfo.target,
+          "deviceName" to deviceInfo.deviceName,
+          "deviceType" to deviceInfo.deviceType,
+          "ipAddress" to deviceInfo.ipAddress,
+          "macAddress" to deviceInfo.macAddress,
+          "bdAddress" to deviceInfo.bdAddress,
+        )
 
-         printers.add(printer)
+        printers.add(printer)
 
-         result.success(printers)
-     }
+        result.success(printers)
+      }
 
-    Discovery.start(context, filterOption, discoveryListener)
+      Discovery.start(context, filterOption, discoveryListener)
+    } catch (e: Epos2Exception) {
+      Log.d("EpsonPrintPlugin", "Failed to start discovery: $e")
+      result.error("discovery", "Failed to start discovery", null)
+    } catch (e: Exception) {
+      Log.d("EpsonPrintPlugin", "Failed to start discovery: $e")
+      result.error("discovery", "Failed to start discovery", null)
+    } finally {
+      Discovery.stop()
+    }
   }
 
   private fun printImage(call: MethodCall, result: Result) {
